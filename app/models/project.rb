@@ -56,6 +56,7 @@ class Project < ApplicationRecord
       "avg_sent_len": avg_sent_len,
       "avg_para_len": avg_para_len,
       "avg_syllables_word": avg_syllables_word,
+      "num_unique_words": num_unique_words,
       "word_frequency": word_frequency,
     }
   end
@@ -146,6 +147,11 @@ class Project < ApplicationRecord
     end
     @avg_syllables_word = syllables.to_f/@num_words
     @avg_syllables_word.round(2)
+  end
+
+  def num_unique_words
+    #needs to be on clean text
+    @num_unique_words = self.content.split(/\W+/).uniq.length
   end
 
   def word_frequency
@@ -239,6 +245,7 @@ class Project < ApplicationRecord
 
     def sentence_rank()
       #Splits the full text into sentences (ignoring common fullstops)
+      #Needs to be done on CLEANED TEXT
       sentences = self.content.split(/(?<!\be\.g|\bi\.e|\bvs|\bMr|\bMrs|\bDr)(?:\.|\?|\!)(?= |$)/)
       # An array to hold the ranking
       sentences_frequency = []
@@ -265,7 +272,6 @@ class Project < ApplicationRecord
       @summary_array = summary
       summary.flatten.join(".") + "."
     end
-
     @summary_full = sentence_rank
   end
 
