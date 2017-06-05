@@ -5,8 +5,7 @@ class Project < ApplicationRecord
 
   before_create do
     create_regexs
-    find_subject
-    find_themes
+    fill_feilds
   end
 
   after_find do
@@ -26,13 +25,35 @@ class Project < ApplicationRecord
     #Need to change so that it is representative of the amount of unique words that are entered.
     @frequency_regex = /#{word_frequency[0..10].join("|")}/
   end
+
   #Pre-Hook Saves
+  def fill_feilds
+    summary_full
+    self.subject = find_subject
+    self.theme = find_themes
+    self.keywords = find_keywords
+    self.summary = summary_5
+  end
+
   def find_subject
-    self.subject = ["test"]
+    ["test"]
   end
 
   def find_themes
-    self.theme = ["test1", "test2"]
+    ["test1", "test2"]
+  end
+
+  def find_keywords
+    require 'rake_text'
+    @rake = RakeText.new
+    keywords = @rake.analyse self.content, RakeText.SMART
+    #sort the
+    keywords = keywords.sort_by {|a, b| b }
+    # Eliminate low ranking keywords
+    keywords = keywords.reject {|a, b| b <= 1.4 }
+    # Reject phrases with over 4 words
+    keywords = keywords.reject {|a, b| a.split(/\W+/).length > 4 }
+    @keywords = keywords.reverse!
   end
 
 
@@ -75,7 +96,6 @@ class Project < ApplicationRecord
 
   def word_extraction
     self.word_extraction = {
-      "keywords": keywords,
       "named_people": named_people,
       "inline_references": inline_references,
       "bib_references": bibliographical_references,
@@ -92,8 +112,6 @@ class Project < ApplicationRecord
       "summary_5": summary_5
     }
   end
-
-
 
   #Text Analysis
   def cleaned
@@ -215,8 +233,6 @@ class Project < ApplicationRecord
 
 
   #word_extraction
-  def keywords
-  end
   def named_people
   end
 
