@@ -16,7 +16,6 @@ class ProjectsController < ApplicationController
   # POST /projects
   def create
     @project = @current_user.projects.new(project_params)
-  
     if @project.save
       render json: @project, status: :created, location: @project
     else
@@ -46,6 +45,6 @@ class ProjectsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def project_params
-      params.require(:project).permit(:title, :content, :user_id, :subject, :theme, :summary, :keywords)
+      params.require(:project).permit(:title, :content, :user_id, :subject, :theme, :summary, :keywords, :something)
     end
 end
