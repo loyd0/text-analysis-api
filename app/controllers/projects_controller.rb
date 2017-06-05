@@ -3,9 +3,10 @@ class ProjectsController < ApplicationController
 
   # GET /projects
   def index
-    @projects = Project.all
+    # @projects = Project.all
 
-    render json: @projects
+    # render json: @projects
+    render json: {message: "Indexing is not permitted"}
   end
 
   # GET /projects/1
@@ -45,6 +46,6 @@ class ProjectsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def project_params
-      params.require(:project).permit(:title, :content, :user_id, :subject, :theme, :summary, :keywords, :something)
+      params.require(:project).permit(:title, :content, :user_id, :subject, :theme, :summary, :keywords)
     end
 end
