@@ -1,20 +1,31 @@
 class Project < ApplicationRecord
   belongs_to :user
 
-  attr_accessor :basic_analysis, :text, :word_extraction, :sentiment_analysis, :readability_analysis, :content_analysis
+  attr_accessor :basic_analysis, :text, :word_extraction, :sentiment_analysis, :readability_analysis, :generate_summary
 
   before_create do
+    create_regexs
     find_subject
     find_themes
   end
 
   after_find do
+    create_regexs
     basic_analysis
     # post_test
     # word_count
+
   end
 
   private
+
+  # Regex's
+
+  def create_regexs
+    @inline_references_regex = Regexp.new("\(((?:[A-Z][A-Za-z'`-]+)(?:,? (?:(?:and |& )?(?:[A-Z][A-Za-z'`-]+)|(?:et al.?)))*)(?:, *(?:19|20)[0-9][0-9](?:, p.? [0-9]+)?| *\((?:19|20)[0-9][0-9](?:, p.? [0-9]+)?\))\)")
+    #Need to change so that it is representative of the amount of unique words that are entered.
+    @frequency_regex = /#{word_frequency[0..10].join("|")}/
+  end
   #Pre-Hook Saves
   def find_subject
     self.subject = ["test"]
@@ -74,10 +85,20 @@ class Project < ApplicationRecord
     }
   end
 
-  #Text Analysis
+  def generate_summary
+    self.generate_summary = {
+      "summary_full": summary_full,
+      "summary_5": summary_5
+    }
+  end
 
+
+
+  #Text Analysis
   def cleaned
-    # self.content.reject { |para| para.empty? }.length
+    # Add cleaning filters
+    @cleaned = self.content
+    "Need to add cleaning procedures"
   end
 
   def processed
@@ -133,7 +154,8 @@ class Project < ApplicationRecord
     frequencies = frequencies.sort_by {|a, b| b }
     frequencies.reverse!.flatten!
     frequencies = frequencies.join(" ").split(/[^\[a-z]+(?:\s+)/)
-    frequencies[0..10]
+    @word_frequencies = frequencies
+    @word_frequencies[0..10]
   end
 
   #readability_analysis
@@ -191,8 +213,16 @@ class Project < ApplicationRecord
   end
   def named_people
   end
+
   def inline_references
+    inline_references = []
+    self.content.scan(@inline_references_regex).each do |ref|
+      #removes the supurpulous information
+      inline_references.push(ref[0])
+    end
+    @inline_references = inline_references
   end
+
   def bibliographical_references
   end
   def phone_nums
@@ -204,5 +234,42 @@ class Project < ApplicationRecord
   def addresses
   end
 
+  def summary_full
+    # frequency_regex = /#{@word_frequencies[0..10].join("|")}/
 
+    def sentence_rank()
+      #Splits the full text into sentences (ignoring common fullstops)
+      sentences = self.content.split(/(?<!\be\.g|\bi\.e|\bvs|\bMr|\bMrs|\bDr)(?:\.|\?|\!)(?= |$)/)
+      # An array to hold the ranking
+      sentences_frequency = []
+      sentences.each_with_index do |sentence, index|
+        score = sentence.scan(@frequency_regex).length
+        sentences_frequency.push(Hash[sentence, [score, index+1]])
+      end
+      sentence_rank_sort(sentences_frequency)
+    end
+
+    def sentence_rank_sort(sentence_rank)
+      sentences_ranked = sentence_rank.sort_by {|sent| sent.values[0] }
+      summary_reorder(sentences_ranked.reverse!)
+    end
+
+    def summary_reorder(sentences_ranked)
+      sentences_ordered = sentences_ranked.sort_by {|sent| sent.values[1] }
+      summary_assemble(sentences_ordered.reverse!)
+    end
+
+    def summary_assemble(sentences)
+      summary = []
+      sentences.each { |sentence| summary.push(sentence.keys) }
+      @summary_array = summary
+      summary.flatten.join(".") + "."
+    end
+
+    @summary_full = sentence_rank
+  end
+
+  def summary_5
+    @summary_array[0..5].flatten.join(".") + "."
+  end
 end
