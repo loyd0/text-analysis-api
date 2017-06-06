@@ -20,7 +20,6 @@ require_relative "word_lists/virtue"
 require_relative "word_lists/weak"
 
 module MasterWordList
-
   def self.AbstractionAnalysis
     extend Abstraction
   end
@@ -72,6 +71,3 @@ module MasterWordList
     extend Virtue
   end
 end
-
-
-print MasterWordList.Ethics

@@ -30,7 +30,7 @@ class Project < ApplicationRecord
   def fill_feilds
     summary_full
     self.subject = find_subject
-    self.theme = find_themes
+    self.theme = [find_themes]
     self.keywords = find_keywords
     self.summary = summary_5
   end
@@ -40,7 +40,8 @@ class Project < ApplicationRecord
   end
 
   def find_themes
-    ["test1", "test2"]
+    require_relative "../../lib/analytics/themes.rb"
+    ThemeAnalysis.theme_analysed(self.content)
   end
 
   def find_keywords
