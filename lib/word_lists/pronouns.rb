@@ -1,3 +1,12 @@
-self_array = ["i", "i'm", "me", "mine", "my", "myself", "oneself"]
-our = ["let's", "out", "ours", "ourselves", "us", "we"]
-you = ["thee", "thou", "thy", "you", "your", "yours", "yourself", "yourselves"]
+
+module Pronouns
+  def self
+    ["i", "i'm", "me", "mine", "my", "myself", "oneself"]
+  end
+  def our
+    ["let's", "out", "ours", "ourselves", "us", "we"]
+  end
+  def you
+    ["thee", "thou", "thy", "you", "your", "yours", "yourself", "yourselves"]
+  end
+end

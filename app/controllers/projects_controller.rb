@@ -11,8 +11,6 @@ class ProjectsController < ApplicationController
 
   # GET /projects/1
   def show
-    puts "****************************************************"
-    puts json: @project['keywords']
     render json: @project
   end
 
