@@ -1,6 +1,6 @@
 
 module Pronouns
-  def self
+  def selfs
     ["i", "i'm", "me", "mine", "my", "myself", "oneself"]
   end
   def our

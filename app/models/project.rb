@@ -1,7 +1,7 @@
 class Project < ApplicationRecord
   belongs_to :user
 
-  attr_accessor :basic_analysis, :text, :word_extraction, :sentiment_analysis, :readability_analysis, :generate_summary
+  attr_accessor :basic_analysis, :text, :word_extraction, :sentiment_analysis, :readability_analysis, :generate_summary, :full_content_analysis, :para_content_analysis
 
   before_create do
     create_regexs
@@ -13,7 +13,6 @@ class Project < ApplicationRecord
     basic_analysis
     # post_test
     # word_count
-
   end
 
   private
@@ -59,8 +58,6 @@ class Project < ApplicationRecord
 
 
   #Post Find Manipulations
-
-
   #Aggregators
   def  text
     self.text = {
@@ -114,6 +111,23 @@ class Project < ApplicationRecord
     }
   end
 
+  def para_content_analysis
+    require_relative "../../lib/analytics/for_against"
+    self.para_content_analysis = {
+      "for_against": ForOrAgainst.analysis_constructor(@processed, num_unique_words)
+    }
+  end
+
+  def full_content_analysis
+    require_relative "../../lib/analytics/condemnation_praise"
+    require_relative "../../lib/analytics/person_context"
+    self.full_content_analysis = {
+      "condemnation_vs_Praise": CondemnationAndPraiseAnalysis.analysis_constructor(self.content, num_unique_words),
+      "person_voice_context": PersonContext.analysis_constructor(self.content, num_unique_words),
+      "for_against": para_content_aggregator(para_content_analysis[:for_against])
+    }
+  end
+
   #Text Analysis
   def cleaned
     # Add cleaning filters
@@ -123,8 +137,8 @@ class Project < ApplicationRecord
 
   def processed
     #Splitting on double lines/may have to change for single lines or standardise
-    @processed = self.content.split(/\n\n/)
-    @processed.reject { |para| para.empty? }
+    processed = self.content.split(/\n\n/)
+    @processed = processed.reject { |para| para.empty? }
   end
 
   #Basic Analysis
@@ -184,7 +198,6 @@ class Project < ApplicationRecord
   end
 
   #readability_analysis
-
   def complex_words_total
     complex_words = 0
     self.content.split(/\W+/).each do |word|
@@ -227,7 +240,6 @@ class Project < ApplicationRecord
     def avg_sent_100_words
       (@num_sentences.to_f/ @num_words.to_f) * 100
     end
-
     @coleman_score = ((0.0588*avg_letters_100_words) - (0.2965*avg_sent_100_words)) - 15.8
     @coleman_score.round(2)
   end
@@ -295,4 +307,20 @@ class Project < ApplicationRecord
   def summary_5
     @summary_array[0..5].flatten.join(".") + "."
   end
+
+  # Content Analysis
+  def para_content_aggregator(paragraph_object)
+    total_for = 0
+    total_against = 0
+    paragraph_object[:for].each do |score|
+      score.each {|key, value| total_for += value }
+    end
+    paragraph_object[:against].each do |score|
+      score.each {|key, value| total_against += value }
+    end
+
+    total = {"total_for": total_for, "total_against": total_against}
+    total
+  end
+
 end

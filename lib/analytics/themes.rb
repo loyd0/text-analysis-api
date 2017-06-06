@@ -1,10 +1,12 @@
 require_relative "../master_word_list"
 module ThemeAnalysis
 
+
+#the actual analysis function
   def self.analysis(text, regex)
     text.downcase.scan(regex).flatten.length
   end
-
+#constructing the object response
   def self.theme_analysed(content)
     theme_analysed = {
       "architecture": analysis(content, self.building_regex),
@@ -19,7 +21,7 @@ module ThemeAnalysis
     }
     theme_sorting(theme_analysed)
   end
-
+#sorting the object response and organising it
   def self.theme_sorting(analysed)
     analysed = analysed.sort_by {|a, b| b }
     sorted_themes = []
@@ -29,6 +31,7 @@ module ThemeAnalysis
     Hash[sorted_themes[0..2].map {|x| [x[0], x[1]]}]
   end
 
+  #creating the regexes
   def self.building_regex
     /\b(#{MasterWordList.Themes.buildings.join("|")})(?:y|ies|s|ing|ed|er)\b/
   end
@@ -58,9 +61,3 @@ module ThemeAnalysis
     /\b(#{MasterWordList.Ethics.join("|")})(?:y|ies|s|ing|ed|er)\b/
   end
 end
-
-
-print ThemeAnalysis.theme_analysed("This essay will consider whether or not Machiavelli was a teacher of evil, with specific reference to his text The Prince. (Frank et al, 2014) It shall first be shown what it was that Machiavelli taught and how this can only be justified by consequentialism. It shall then be discussed whether consequentialism is a viable ethical theory, in order that it can justify Machiavelli\'s teaching. Arguing that this is not the case, it will be concluded that Machiavelli is a teacher of evil.\n\n To begin, it shall be shown what Machiavelli taught or suggested be adopted in order for a ruler to maintain power. To understand this, it is necessary to understand the political landscape of the period.\n\n The Prince was published posthumously in 1532, and was intended as a guidebook to rulers of principalities. (Nedermane, et al, 2014) Machiavelli was born in Italy and, during that period, there were many wars between the various states which constituted Italy. (Testing, Testing, 4002)These states were either republics (governed by an elected body) or principalities (governed by a monarch or single ruler). The Prince was written and dedicated to Lorenzo de Medici who was in charge of Florence which, though a republic, was autocratic, like a principality. Machiavelli\'s work aimed to give Lorenzo de Medici advice to rule as an autocratic prince. (Nederman, 2014)\n\n This essay will consider whether or not Machiavelli was a teacher of evil, with specific reference to his text The Prince. It shall first be shown what it was that Machiavelli taught and how this can only be justified by consequentialism. It shall then be discussed whether consequentialism is a viable ethical theory, in order that it can justify Machiavelli\'s teaching. (Nedermane, 2014) Arguing that this is not the case, it will be concluded that Machiavelli is a teacher of evil.\n\n To begin, it shall be shown what Machiavelli taught or suggested be adopted in order for a ruler to maintain power. (John, 2004) To understand this, it is necessary to understand the political landscape of the period.\n\n The Prince was published posthumously in 1532, and was intended as a guidebook to rulers of principalities. Machiavelli was born in Italy and, during that period, there were many wars between the various states which constituted Italy. These states were either republics (governed by an elected body) or principalities (governed by a monarch or single ruler). The Prince was written and dedicated to Lorenzo de Medici who was in charge of Florence which, though a republic, was autocratic, like a principality. Machiavelli\'s work aimed to give Lorenzo de Medici advice to rule as an autocratic prince. (Nederman, 2014)")
-
-
-# print text.downcase.scan(ThemeAnalysis.economics_regex).flatten
