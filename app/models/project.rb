@@ -39,7 +39,8 @@ class Project < ApplicationRecord
   end
 
   def find_subject
-    ["test"]
+    require_relative "../../lib/subject_classifier.rb"
+    [SubjectClassifier.get_subject(self.content)]
   end
 
   def find_themes
@@ -98,7 +99,7 @@ class Project < ApplicationRecord
 
   def word_extraction
     self.word_extraction = {
-      "named_people": named_people,
+      "entity_extraction": entity_extraction,
       "inline_references": inline_references,
       "bib_references": bibliographical_references(@processed),
       "phone_nums": phone_nums,
@@ -253,7 +254,9 @@ class Project < ApplicationRecord
 
 
   #word_extraction
-  def named_people
+  def entity_extraction
+    require_relative "../../lib/named_entity.rb"
+    NamedEntity.get_entities(self.content)
   end
 
   def inline_references
@@ -269,7 +272,7 @@ class Project < ApplicationRecord
     matchdata = []
     full_match = []
     text.each { |para| matchdata.push(para.match(@bibliographical_regex)).to_a }
-    matchdata.each { |ref| full_match.push(ref[0]) }
+    # matchdata.each { |ref| full_match.push(ref[0]) }
     full_match
   end
   def phone_nums

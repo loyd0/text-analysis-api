@@ -44,6 +44,7 @@ GEM
       minitest (~> 5.1)
       tzinfo (~> 1.1)
     arel (8.0.0)
+    aylien_text_api (0.7.0)
     bcrypt (3.1.11)
     builder (3.2.3)
     byebug (9.0.6)
@@ -136,6 +137,7 @@ PLATFORMS
 
 DEPENDENCIES
   active_model_serializers
+  aylien_text_api
   bcrypt (~> 3.1.7)
   byebug
   figaro
