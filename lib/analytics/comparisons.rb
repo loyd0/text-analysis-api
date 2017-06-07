@@ -1,6 +1,6 @@
 require_relative "../master_word_list"
 
-module ForOrAgainst
+module ComparativeLanguage
 
   #the actual analysis function
   def self.analysis(text, regex_1, regex_2)
@@ -15,23 +15,16 @@ module ForOrAgainst
   def self.analysis_constructor(content, content_word_count)
   #finds the percentatge of words that relate to the regex/word list and returns a percentage of the unique words in the content it is analysising.
     analysis_constructed = {
-      "for": analysis(content, self.for_regex, self.for_regex_plurals),
-      "against": analysis(content, self.against_regex, self.against_regex_plurals)
+      "comparative_language": analysis(content, self.comparisons_regex, self.comparisons_regex_plurals)
     }
     analysis_constructed
   end
 
   #creating the regexes - will refactor into better ones once I learn regex better
-  def self.for_regex
-   /\b(?:#{MasterWordList.ForAndAgainst.positive_words.join("|")})\b/
+  def self.comparisons_regex
+   /\b(?:#{MasterWordList.Comparision.relationship_abstract.join("|")})\b/
   end
-  def self.for_regex_plurals
-   /\b(?:|#{MasterWordList.ForAndAgainst.positive_words.join("|")})(y|ies|s|ing|ed|er|d)\b/
-  end
-  def self.against_regex
-    /\b(?:#{MasterWordList.ForAndAgainst.negative_words.join("|")})\b/
-  end
-  def self.against_regex_plurals
-    /\b(?:|#{MasterWordList.ForAndAgainst.negative_words.join("|")})(y|ies|s|ing|ed|er|d)\b/
+  def self.comparisons_regex_plurals
+   /\b(?:|#{MasterWordList.Comparision.relationship_abstract.join("|")})(y|ies|s|ing|ed|er|d)\b/
   end
 end

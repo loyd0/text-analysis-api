@@ -113,8 +113,14 @@ class Project < ApplicationRecord
 
   def para_content_analysis
     require_relative "../../lib/analytics/for_against"
+    require_relative "../../lib/analytics/analytics"
+    require_relative "../../lib/analytics/comparisons"
     self.para_content_analysis = {
-      "for_against": ForOrAgainst.analysis_constructor(@processed, num_unique_words)
+      "for_against": ForOrAgainst.analysis_constructor(@processed, num_unique_words),
+      "analytics": [
+        AnalyticalAnalysis.analysis_constructor(@processed, num_unique_words),
+        ComparativeLanguage.analysis_constructor(@processed, num_unique_words)
+      ]
     }
   end
 

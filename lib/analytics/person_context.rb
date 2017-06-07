@@ -18,12 +18,12 @@ module PersonContext
 
   #creating the regexes - will refactor into better ones once I learn regex better
   def self.selfs_regex
-   /\b(?:#{MasterWordList.Pronouns.selfs.join("|")})(y|ies|s|ing|ed|er)\b/
+   /\b(?:#{MasterWordList.Pronouns.selfs.join("|")})(y|ies|s|ing|ed|er|d)\b/
   end
   def self.our_regex
-   /\b(?:|#{MasterWordList.Pronouns.our.join("|")})(y|ies|s|ing|ed|er)\b/
+   /\b(?:|#{MasterWordList.Pronouns.our.join("|")})(y|ies|s|ing|ed|er|d)\b/
   end
   def self.you_regex
-    /\b(?:#{MasterWordList.Pronouns.you.join("|")})(y|ies|s|ing|ed|er)\b/
+    /\b(?:#{MasterWordList.Pronouns.you.join("|")})(y|ies|s|ing|ed|er|d)\b/
   end
 end

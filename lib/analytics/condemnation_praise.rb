@@ -20,12 +20,12 @@ module CondemnationAndPraiseAnalysis
    /\b(?:#{MasterWordList.CondemnationAndPraise.vice.join("|")})\b/
   end
   def self.condemnation_regex_plurals
-   /\b(?:|#{MasterWordList.CondemnationAndPraise.vice.join("|")})(y|ies|s|ing|ed|er)\b/
+   /\b(?:|#{MasterWordList.CondemnationAndPraise.vice.join("|")})(y|ies|s|ing|ed|er|d)\b/
   end
   def self.praise_regex
     /\b(?:#{MasterWordList.CondemnationAndPraise.virtue.join("|")})\b/
   end
   def self.praise_regex_plurals
-    /\b(?:|#{MasterWordList.CondemnationAndPraise.virtue.join("|")})(y|ies|s|ing|ed|er)\b/
+    /\b(?:|#{MasterWordList.CondemnationAndPraise.virtue.join("|")})(y|ies|s|ing|ed|er|d)\b/
   end
 end
