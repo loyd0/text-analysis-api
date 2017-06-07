@@ -20,9 +20,13 @@ class Project < ApplicationRecord
   # Regex's
 
   def create_regexs
+    # @bibliographical_regex = /^(?<author>[A-Z](?:(?!$)[A-Za-z\s&.,'’])+)\((?<year>\d{4})\)\.?\s*(?<title>[^()]+?[?.!])+\s*/
+    @bibliographical_regex = /^(?<author>[A-Z](?:(?!$)[A-Za-z\s&.,'’])+)\((?<year>\d{4})\)\.?\s*(?<title>[^()]+?[?.!]+)+\s.*/
+
     @inline_references_regex = Regexp.new("\(((?:[A-Z][A-Za-z'`-]+)(?:,? (?:(?:and |& )?(?:[A-Z][A-Za-z'`-]+)|(?:et al.?)))*)(?:, *(?:19|20)[0-9][0-9](?:, p.? [0-9]+)?| *\((?:19|20)[0-9][0-9](?:, p.? [0-9]+)?\))\)")
     #Need to change so that it is representative of the amount of unique words that are entered.
     @frequency_regex = /#{word_frequency[0..10].join("|")}/
+
   end
 
   #Pre-Hook Saves
@@ -96,7 +100,7 @@ class Project < ApplicationRecord
     self.word_extraction = {
       "named_people": named_people,
       "inline_references": inline_references,
-      "bib_references": bibliographical_references,
+      "bib_references": bibliographical_references(@processed),
       "phone_nums": phone_nums,
       "emails": email,
       "url_links": url_links,
@@ -112,25 +116,22 @@ class Project < ApplicationRecord
   end
 
   def para_content_analysis
-    require_relative "../../lib/analytics/for_against"
     require_relative "../../lib/analytics/analytics"
-    require_relative "../../lib/analytics/comparisons"
+    require_relative "../../lib/analytics/voice"
     self.para_content_analysis = {
-      "for_against": ForOrAgainst.analysis_constructor(@processed, num_unique_words),
-      "analytics": [
-        AnalyticalAnalysis.analysis_constructor(@processed, num_unique_words),
-        ComparativeLanguage.analysis_constructor(@processed, num_unique_words)
-      ]
+      "analytics": AnalyticalAnalysis.analysis_constructor(@processed, num_unique_words),
+      "voice": VoiceAnalysis.analysis_constructor(@processed, num_unique_words)
     }
   end
 
   def full_content_analysis
     require_relative "../../lib/analytics/condemnation_praise"
     require_relative "../../lib/analytics/person_context"
+    require_relative "../../lib/analytics/for_against"
     self.full_content_analysis = {
       "condemnation_vs_Praise": CondemnationAndPraiseAnalysis.analysis_constructor(self.content, num_unique_words),
       "person_voice_context": PersonContext.analysis_constructor(self.content, num_unique_words),
-      "for_against": para_content_aggregator(para_content_analysis[:for_against])
+      "for_against": ForOrAgainst.analysis_constructor(self.content, num_unique_words)
     }
   end
 
@@ -264,7 +265,12 @@ class Project < ApplicationRecord
     @inline_references = inline_references
   end
 
-  def bibliographical_references
+  def bibliographical_references(text)
+    matchdata = []
+    full_match = []
+    text.each { |para| matchdata.push(para.match(@bibliographical_regex)).to_a }
+    matchdata.each { |ref| full_match.push(ref[0]) }
+    full_match
   end
   def phone_nums
   end
@@ -276,8 +282,6 @@ class Project < ApplicationRecord
   end
 
   def summary_full
-    # frequency_regex = /#{@word_frequencies[0..10].join("|")}/
-
     def sentence_rank()
       #Splits the full text into sentences (ignoring common fullstops)
       #Needs to be done on CLEANED TEXT
@@ -315,18 +319,5 @@ class Project < ApplicationRecord
   end
 
   # Content Analysis
-  def para_content_aggregator(paragraph_object)
-    total_for = 0
-    total_against = 0
-    paragraph_object[:for].each do |score|
-      score.each {|key, value| total_for += value }
-    end
-    paragraph_object[:against].each do |score|
-      score.each {|key, value| total_against += value }
-    end
-
-    total = {"total_for": total_for, "total_against": total_against}
-    total
-  end
 
 end

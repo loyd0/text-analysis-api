@@ -4,11 +4,7 @@ module ForOrAgainst
 
   #the actual analysis function
   def self.analysis(text, regex_1, regex_2)
-    paragraphs = []
-    text.each_with_index do |para, index|
-      paragraphs.push("#{index+1}" => para.downcase.scan(regex_1).flatten.length +  para.downcase.scan(regex_2).flatten.length)
-    end
-    paragraphs
+    text.downcase.scan(regex_1).flatten.length + text.downcase.scan(regex_2).flatten.length
   end
 
   #constructing the object response
