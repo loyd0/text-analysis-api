@@ -9,26 +9,29 @@ module ThemeAnalysis
 #constructing the object response
   def self.theme_analysed(content)
     theme_analysed = {
-      "architecture": analysis(content, self.building_regex),
-      "economics": analysis(content, self.economics_regex),
-      "law": analysis(content, self.law_regex),
-      "socialOrhumanity": analysis(content, self.human_regex),
-      "mediaOrcommunication": analysis(content, self.media_regex),
-      "political": analysis(content, self.politics_regex),
-      "religious": analysis(content, self.religious_regex),
-      "social": analysis(content, self.social_regex),
-      "ethics": analysis(content, self.ethics_regex)
+      "Architecture": analysis(content, self.building_regex),
+      "Economical": analysis(content, self.economics_regex),
+      "Legal": analysis(content, self.law_regex),
+      "Humanities": analysis(content, self.human_regex),
+      "Media": analysis(content, self.media_regex),
+      "Political": analysis(content, self.politics_regex),
+      "Religious": analysis(content, self.religious_regex),
+      "Social": analysis(content, self.social_regex),
+      "Ethical": analysis(content, self.ethics_regex)
     }
     theme_sorting(theme_analysed)
   end
 #sorting the object response and organising it
   def self.theme_sorting(analysed)
+    theme_total = 0
+    analysed.each { |a, b| theme_total = theme_total + b }
     analysed = analysed.sort_by {|a, b| b }
     sorted_themes = []
     analysed.reverse!.each do |theme|
-      sorted_themes.push(theme) if (theme[1].to_i > 3)
+      sorted_themes.push([theme[0], ((theme[1].to_f/theme_total)*100).round(2)])
+      # sorted_themes.push(theme) if (theme[1].to_i > 3)
     end
-    Hash[sorted_themes[0..2].map {|x| [x[0], x[1]]}]
+    sorted_themes
   end
 
   #creating the regexes

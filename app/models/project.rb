@@ -1,7 +1,7 @@
 class Project < ApplicationRecord
   belongs_to :user
 
-  attr_accessor :basic_analysis, :text, :word_extraction, :sentiment_analysis, :readability_analysis, :generate_summary, :full_content_analysis, :para_content_analysis
+  attr_accessor :basic_analysis, :text, :word_extraction, :readability_analysis, :generate_summary, :full_content_analysis, :para_content_analysis
 
   before_create do
     create_regexs
@@ -26,13 +26,13 @@ class Project < ApplicationRecord
     @inline_references_regex = Regexp.new("\(((?:[A-Z][A-Za-z'`-]+)(?:,? (?:(?:and |& )?(?:[A-Z][A-Za-z'`-]+)|(?:et al.?)))*)(?:, *(?:19|20)[0-9][0-9](?:, p.? [0-9]+)?| *\((?:19|20)[0-9][0-9](?:, p.? [0-9]+)?\))\)")
     #Need to change so that it is representative of the amount of unique words that are entered.
     @frequency_regex = /#{word_frequency[0..10].join("|")}/
-
+    @phone_nums_regex =  /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/
   end
 
   #Pre-Hook Saves
   def fill_feilds
     summary_full
-    self.subject = find_subject
+    self.subject = [find_subject]
     self.theme = [find_themes]
     self.keywords = find_keywords
     self.summary = summary_5
@@ -40,7 +40,8 @@ class Project < ApplicationRecord
 
   def find_subject
     require_relative "../../lib/subject_classifier.rb"
-    [SubjectClassifier.get_subject(self.content)]
+    # SubjectClassifier.get_subject(self.content)
+    ["test"]
   end
 
   def find_themes
@@ -100,12 +101,9 @@ class Project < ApplicationRecord
   def word_extraction
     self.word_extraction = {
       "entity_extraction": entity_extraction,
+      # "entity_extraction": ["TEST"],
       "inline_references": inline_references,
-      "bib_references": bibliographical_references(@processed),
-      "phone_nums": phone_nums,
-      "emails": email,
-      "url_links": url_links,
-      "addresses": addresses
+      "bib_references": bibliographical_references(@processed)
     }
   end
 
@@ -130,7 +128,7 @@ class Project < ApplicationRecord
     require_relative "../../lib/analytics/person_context"
     require_relative "../../lib/analytics/for_against"
     self.full_content_analysis = {
-      "condemnation_vs_Praise": CondemnationAndPraiseAnalysis.analysis_constructor(self.content, num_unique_words),
+      "condemnation_vs_praise": CondemnationAndPraiseAnalysis.analysis_constructor(self.content, num_unique_words),
       "person_voice_context": PersonContext.analysis_constructor(self.content, num_unique_words),
       "for_against": ForOrAgainst.analysis_constructor(self.content, num_unique_words)
     }
@@ -199,10 +197,11 @@ class Project < ApplicationRecord
     frequencies = Hash.new(0)
     self.content.downcase.split(/\W+/).each { |word| frequencies[word] += 1 }
     frequencies = frequencies.sort_by {|a, b| b }
-    frequencies.reverse!.flatten!
-    frequencies = frequencies.join(" ").split(/[^\[a-z]+(?:\s+)/)
-    @word_frequencies = frequencies
-    @word_frequencies[0..10]
+    # frequencies.reverse!.flatten!
+    frequencies.reverse!
+    # frequencies = frequencies.join(" ").split(/[^\[a-z]+(?:\s+)/)
+    # @word_frequencies = frequencies
+    # @word_frequencies[0..10]
   end
 
   #readability_analysis
@@ -227,7 +226,7 @@ class Project < ApplicationRecord
         end
         para_complex_words += 1  if (word_score.to_i > 2)
       end
-      complex_words_distribution.push({ index+1 => para_complex_words })
+      complex_words_distribution.push([index+1, para_complex_words ])
     end
     @complex_words_distribution = complex_words_distribution
   end
@@ -274,14 +273,6 @@ class Project < ApplicationRecord
     text.each { |para| matchdata.push(para.match(@bibliographical_regex)).to_a }
     # matchdata.each { |ref| full_match.push(ref[0]) }
     full_match
-  end
-  def phone_nums
-  end
-  def email
-  end
-  def url_links
-  end
-  def addresses
   end
 
   def summary_full

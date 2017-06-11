@@ -12,13 +12,12 @@ module AnalyticalAnalysis
   #finds the percentatge of words that relate to the regex/word list and returns a percentage of the unique words in the content it is analysising.
   paragraphs = []
   content.each_with_index do |para, index|
-    paragraphs.push("#{index + 1}": {
+    paragraphs.push({
       "analytical_levels": analysis(para, self.analytics_regex, self.analytics_regex_plurals),
       "comparative_language": analysis(para, self.comparisons_regex, self.comparisons_regex_plurals),
       "abstraction": analysis(para, self.abstraction_regex, self.abstraction_regex_plurals),
       "for": analysis(para, self.for_regex, self.for_regex_plurals),
       "against": analysis(para, self.against_regex, self.against_regex_plurals)
-
     })
   end
     paragraphs

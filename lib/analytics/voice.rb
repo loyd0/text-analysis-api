@@ -12,9 +12,9 @@ module VoiceAnalysis
   #finds the percentatge of words that relate to the regex/word list and returns a percentage of the unique words in the content it is analysising.
   paragraphs = []
   content.each_with_index do |para, index|
-    paragraphs.push("#{index + 1}": {
-      "strength": analysis(para, self.strength_regex, self.strength_regex_plurals),
-      "weakness": analysis(para, self.weakness_regex, self.weakness_regex_plurals),
+    paragraphs.push({
+      "strong": analysis(para, self.strength_regex, self.strength_regex_plurals),
+      "weak": analysis(para, self.weakness_regex, self.weakness_regex_plurals),
       "passive": analysis(para, self.passive_regex, self.passive_regex_plurals),
       "active": analysis(para, self.active_regex, self.active_regex_plurals)
     })
