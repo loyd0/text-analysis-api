@@ -17,6 +17,9 @@ class ProjectsController < ApplicationController
   # POST /projects
   def create
     @project = @current_user.projects.new(project_params)
+    puts "**************************************************"
+    puts @project.content
+    puts "***************************************************"
     if @project.save
       render json: @project, status: :created, location: @project
     else

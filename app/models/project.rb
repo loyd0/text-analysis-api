@@ -5,14 +5,16 @@ class Project < ApplicationRecord
 
   before_create do
     create_regexs
+    cleaned
+    create_freq_regexs
     fill_feilds
   end
 
   after_find do
     create_regexs
+    cleaned
+    create_freq_regexs
     basic_analysis
-    # post_test
-    # word_count
   end
 
   private
@@ -25,8 +27,12 @@ class Project < ApplicationRecord
 
     @inline_references_regex = Regexp.new("\(((?:[A-Z][A-Za-z'`-]+)(?:,? (?:(?:and |& )?(?:[A-Z][A-Za-z'`-]+)|(?:et al.?)))*)(?:, *(?:19|20)[0-9][0-9](?:, p.? [0-9]+)?| *\((?:19|20)[0-9][0-9](?:, p.? [0-9]+)?\))\)")
     #Need to change so that it is representative of the amount of unique words that are entered.
-    @frequency_regex = /#{word_frequency[0..10].join("|")}/
     @phone_nums_regex =  /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/
+  end
+
+  # Have to create the frequency regex after the text has been cleaned and the other regexs have been created
+  def create_freq_regexs
+    @frequency_regex = /#{word_frequency[0..10].join("|")}/
   end
 
   #Pre-Hook Saves
@@ -36,23 +42,23 @@ class Project < ApplicationRecord
     self.theme = [find_themes]
     self.keywords = find_keywords
     self.summary = summary_5
+    self.entity = entity_extraction
   end
 
   def find_subject
     require_relative "../../lib/subject_classifier.rb"
-    # SubjectClassifier.get_subject(self.content)
-    ["test"]
+    SubjectClassifier.get_subject(@cleaned.flatten.to_s).capitalize
   end
 
   def find_themes
     require_relative "../../lib/analytics/themes.rb"
-    ThemeAnalysis.theme_analysed(self.content)
+    ThemeAnalysis.theme_analysed(@cleaned.flatten.to_s)
   end
 
   def find_keywords
     require 'rake_text'
     @rake = RakeText.new
-    keywords = @rake.analyse self.content, RakeText.SMART
+    keywords = @rake.analyse @cleaned.flatten.to_s, RakeText.SMART
     #sort the
     keywords = keywords.sort_by {|a, b| b }
     # Eliminate low ranking keywords
@@ -65,10 +71,10 @@ class Project < ApplicationRecord
 
   #Post Find Manipulations
   #Aggregators
-  def  text
+  def text
     self.text = {
-      "cleaned": cleaned,
-      "processed": processed
+      "processed": processed,
+      "cleaned": cleaned
     }
   end
 
@@ -100,10 +106,10 @@ class Project < ApplicationRecord
 
   def word_extraction
     self.word_extraction = {
-      "entity_extraction": entity_extraction,
-      # "entity_extraction": ["TEST"],
+      # "entity_extraction": entity_extraction,
+      "entity_extraction": ["see entity"],
       "inline_references": inline_references,
-      "bib_references": bibliographical_references(@processed)
+      "bib_references": remove_dupliates(bibliographical_references(extreme_processed),bib_extraction_post_bibliography(@processed))
     }
   end
 
@@ -118,8 +124,8 @@ class Project < ApplicationRecord
     require_relative "../../lib/analytics/analytics"
     require_relative "../../lib/analytics/voice"
     self.para_content_analysis = {
-      "analytics": AnalyticalAnalysis.analysis_constructor(@processed, num_unique_words),
-      "voice": VoiceAnalysis.analysis_constructor(@processed, num_unique_words)
+      "analytics": AnalyticalAnalysis.analysis_constructor(@cleaned, num_unique_words),
+      "voice": VoiceAnalysis.analysis_constructor(@cleaned, num_unique_words)
     }
   end
 
@@ -128,17 +134,33 @@ class Project < ApplicationRecord
     require_relative "../../lib/analytics/person_context"
     require_relative "../../lib/analytics/for_against"
     self.full_content_analysis = {
-      "condemnation_vs_praise": CondemnationAndPraiseAnalysis.analysis_constructor(self.content, num_unique_words),
-      "person_voice_context": PersonContext.analysis_constructor(self.content, num_unique_words),
-      "for_against": ForOrAgainst.analysis_constructor(self.content, num_unique_words)
+      "condemnation_vs_praise": CondemnationAndPraiseAnalysis.analysis_constructor(@cleaned.flatten.to_s, num_unique_words),
+      "person_voice_context": PersonContext.analysis_constructor(@cleaned.flatten.to_s, num_unique_words),
+      "for_against": ForOrAgainst.analysis_constructor(@cleaned.flatten.to_s, num_unique_words)
     }
   end
 
   #Text Analysis
   def cleaned
-    # Add cleaning filters
-    @cleaned = self.content
-    "Need to add cleaning procedures"
+    full_text = []
+    cleaning = self.content.split(/\n\n/)
+    cleaning.reject { |para| para.empty? }
+    cleaning.each do |para|
+      para.split(/\n/).each do |sent|
+        paragraph = []
+        # Removing section titles
+        if sent.downcase.match(/bibliography|references|reference|bib|resources/)
+          break
+        elsif sent.split(/\W/).length < 15 && para.index(sent) == 0
+          next
+        elsif sent.match(@bibliographical_regex)
+          next
+        else paragraph.push(sent)
+        end
+        full_text.push(paragraph)
+      end
+    end
+    @cleaned =  full_text.flatten
   end
 
   def processed
@@ -146,23 +168,27 @@ class Project < ApplicationRecord
     processed = self.content.split(/\n\n/)
     @processed = processed.reject { |para| para.empty? }
   end
+  def extreme_processed
+    #Splitting on double lines/may have to change for single lines or standardise
+    self.content.split(/\n/)
+  end
 
   #Basic Analysis
   def num_words
-    @num_words = self.content.split(/\W+/).length
+    @num_words = @cleaned.flatten.to_s.split(/\W+/).length
   end
 
   def num_sentences
-    @num_sentences = self.content.split(/(?<!\be\.g|\bi\.e|\bvs|\bMr|\bMrs|\bDr)(?:\.|\?|\!)(?= |$)/).length
+    @num_sentences = @cleaned.flatten.to_s.split(/(?<!\be\.g|\bi\.e|\bvs|\bMr|\bMrs|\bDr)(?:\.|\?|\!)(?= |$)/).length
   end
 
   def num_paragraphs
-    @num_paragraphs = self.content.split(/\n\n/).length
+    @num_paragraphs = @cleaned.length
   end
 
   def avg_word_len
     total_characters = 0
-    text = self.content.split(/\W+/)
+    text = @cleaned.flatten.to_s.split(/\W+/)
     text.each do |word|
       total_characters += word.length
     end
@@ -179,7 +205,7 @@ class Project < ApplicationRecord
 
   def avg_syllables_word
     syllables = 0
-    self.content.split(/\W+/).each do |word|
+    @cleaned.flatten.to_s.split(/\W+/).each do |word|
       #scan for vowels, scan for silent vowels (end of word), scan for dipthongs
       word_score = word.scan(/[aeiou]/).length - word.scan(/[aeiou]\b/).length -            word.scan(/[aeiou]{2}/).length
       syllables += word_score
@@ -190,12 +216,12 @@ class Project < ApplicationRecord
 
   def num_unique_words
     #needs to be on clean text
-    @num_unique_words = self.content.split(/\W+/).uniq.length
+    @num_unique_words = @cleaned.flatten.to_s.split(/\W+/).uniq.length
   end
 
   def word_frequency
     frequencies = Hash.new(0)
-    self.content.downcase.split(/\W+/).each { |word| frequencies[word] += 1 }
+    @cleaned.flatten.to_s.downcase.split(/\W+/).each { |word| frequencies[word] += 1 }
     frequencies = frequencies.sort_by {|a, b| b }
     # frequencies.reverse!.flatten!
     frequencies.reverse!
@@ -207,7 +233,7 @@ class Project < ApplicationRecord
   #readability_analysis
   def complex_words_total
     complex_words = 0
-    self.content.split(/\W+/).each do |word|
+    @cleaned.flatten.to_s.split(/\W+/).each do |word|
       if (word.length >= 5)
         word_score = word.scan(/[aeiou]/).length - word.scan(/[aeiou]\b/).length -            word.scan(/[aeiou]{2}/).length
       end
@@ -218,7 +244,7 @@ class Project < ApplicationRecord
 
   def complex_words_distribution
     complex_words_distribution = []
-    @processed.each_with_index do |para, index|
+    @cleaned.each_with_index do |para, index|
       para_complex_words = 0
       para.split(/\W+/).each do |word|
         if (word.length >= 5)
@@ -236,7 +262,7 @@ class Project < ApplicationRecord
   end
 
   def gunning_score
-    @gunning_score = 0.45 * ((@num_words/@num_sentences) + (100 * (@complex_words_total/@num_words)))
+    @gunning_score = (0.45 * ((@num_words/@num_sentences) + (100 * (@complex_words_total/@num_words)))).round(2)
   end
 
   def coleman_score
@@ -255,12 +281,12 @@ class Project < ApplicationRecord
   #word_extraction
   def entity_extraction
     require_relative "../../lib/named_entity.rb"
-    NamedEntity.get_entities(self.content)
+    NamedEntity.get_entities(@cleaned.flatten.to_s)
   end
 
   def inline_references
     inline_references = []
-    self.content.scan(@inline_references_regex).each do |ref|
+    @cleaned.flatten.to_s.scan(@inline_references_regex).each do |ref|
       #removes the supurpulous information
       inline_references.push(ref[0])
     end
@@ -270,16 +296,59 @@ class Project < ApplicationRecord
   def bibliographical_references(text)
     matchdata = []
     full_match = []
-    text.each { |para| matchdata.push(para.match(@bibliographical_regex)).to_a }
-    # matchdata.each { |ref| full_match.push(ref[0]) }
+    text.each { |para|
+      matchdata.push(para.match(@bibliographical_regex))
+    }
+    bibref = matchdata.reject  { |sent| sent.class != MatchData }
+    full_match = []
+    bibref.each { |ref| full_match.push("#{ref}")}
     full_match
+  end
+
+  def bib_extraction_post_bibliography(text)
+    array = []
+    text.each_with_index do |para|
+      para.split(/\n/).each_with_index do |sent, index|
+        # print sent, "|**|"
+        if  sent.downcase.match(/bibliography|references|reference|bib|resources/)
+          array.push(para.split(/\n/)[index..para.length-1])
+          # text2 = "para[index+1..para.length-1]"
+          # puts sent
+          # next
+        end
+      end
+    end
+    if array.length == 0
+      return array
+    elsif array.length > 0
+      array.flatten!
+      # print array.shift
+      return array
+    end
+  end
+  def remove_dupliates(array1, array2)
+    # print array1, "&&&&&&&&&&&&&&&", array2
+    array1.each do |ref|
+      if !array2.index(ref)
+        ref_length = 0
+        ref.split(". ").each do |sent|
+          ref_length += sent.split(/\W/).length
+        end
+        if ref_length/(ref.split(". ").length) < 12
+          puts ref_length/(ref.split(". ").length)
+          array2.push(ref)
+        end
+      end
+    end
+    array2.shift
+    array2
   end
 
   def summary_full
     def sentence_rank()
       #Splits the full text into sentences (ignoring common fullstops)
       #Needs to be done on CLEANED TEXT
-      sentences = self.content.split(/(?<!\be\.g|\bi\.e|\bvs|\bMr|\bMrs|\bDr)(?:\.|\?|\!)(?= |$)/)
+      sentences = @cleaned.flatten.to_s.split(/(?<!\be\.g|\bi\.e|\bvs|\bMr|\bMrs|\bDr)(?:\.|\?|\!)(?= |$)/)
       # An array to hold the ranking
       sentences_frequency = []
       sentences.each_with_index do |sentence, index|
