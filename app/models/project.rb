@@ -109,7 +109,8 @@ class Project < ApplicationRecord
       # "entity_extraction": entity_extraction,
       "entity_extraction": ["see entity"],
       "inline_references": inline_references,
-      "bib_references": remove_dupliates(bibliographical_references(extreme_processed),bib_extraction_post_bibliography(@processed))
+      # "bib_references": bibliographical_references(extreme_processed)
+      "bib_references":  remove_dupliates(bibliographical_references(extreme_processed), bib_extraction_post_bibliography(@processed))
     }
   end
 
@@ -151,13 +152,13 @@ class Project < ApplicationRecord
         # Removing section titles
         if sent.downcase.match(/bibliography|references|reference|bib|resources/)
           break
-        elsif sent.split(/\W/).length < 15 && para.index(sent) == 0
+        elsif sent.split(/\W/).length < 5 && para.index(sent) == 0
           next
         elsif sent.match(@bibliographical_regex)
           next
         else paragraph.push(sent)
         end
-        full_text.push(paragraph)
+        full_text.push(paragraph.flatten)
       end
     end
     @cleaned =  full_text.flatten
@@ -327,6 +328,7 @@ class Project < ApplicationRecord
     end
   end
   def remove_dupliates(array1, array2)
+    array3 = []
     # print array1, "&&&&&&&&&&&&&&&", array2
     array1.each do |ref|
       if !array2.index(ref)
@@ -334,14 +336,24 @@ class Project < ApplicationRecord
         ref.split(". ").each do |sent|
           ref_length += sent.split(/\W/).length
         end
-        if ref_length/(ref.split(". ").length) < 12
+        if ref_length.to_f/(ref.split(". ").length) < 12
           puts ref_length/(ref.split(". ").length)
-          array2.push(ref)
+          array3.push(ref)
         end
       end
     end
-    array2.shift
-    array2
+    array2.each do |ref|
+      ref_length = 0
+      ref.split(". ").each do |sent|
+        ref_length += sent.split(/\W/).length
+      end
+      if ref_length.to_f/(ref.split(". ").length) < 12
+        puts ref_length/(ref.split(". ").length)
+        array3.push(ref)
+      end
+    end
+    array3.shift
+    array3
   end
 
   def summary_full
