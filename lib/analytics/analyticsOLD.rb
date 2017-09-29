@@ -52,9 +52,9 @@ end
 
 def bib_extraction_post_bibliography(text)
   text.each do |para|
-    para.!split(/\n/).each_with_index do |sent, index|
+    para.split(/\n/).each_with_index do |sent, index|
       if sent.downcase.match("bibliography" || "references" || "reference" || "bib" || "resources")
-        text = (para[index..para.length-1])
+        text = (para.split(/\n/)[index..para.length-1])
         next
       end
     end

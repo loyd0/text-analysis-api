@@ -4,6 +4,7 @@ module PersonContext
   #the actual analysis function
   def self.analysis(text, regex)
     text.downcase.scan(regex).flatten.length
+    print "^ ", text.downcase.scan(regex).flatten.length, " ^"
   end
   #constructing the object response
   def self.analysis_constructor(content, content_word_count)

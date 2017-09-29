@@ -52,7 +52,6 @@ module MasterWordList
     extend Law
     extend Human
     extend Media
-    extend Media
     extend Politics
     extend Religious
     extend Social
@@ -70,4 +69,13 @@ module MasterWordList
     extend Vice
     extend Virtue
   end
+
+  def self.write
+    testing = File.open('/Users/Sam/Desktop/word_lists.txt', 'w')
+    testing.puts "VIRTUE"
+    testing.puts MasterWordList.CondemnationAndPraise.virtue
+  end
 end
+
+
+# MasterWordList.write
